@@ -1,7 +1,9 @@
+# Donation Tracker (Google Sheets + Apps Script Web App)
+
 ![Donation Tracker Screenshot](DonationTracker.png)
 
 
-# Donation Tracker (Google Sheets + Apps Script Web App)
+
 
 A simple, mobile-friendly app to log **cash** and **non-cash (items)** donations straight into Google Sheets — with fair-market value (FMV) lookups from the included value guide in the template.
 
