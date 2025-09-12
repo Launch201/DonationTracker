@@ -108,6 +108,9 @@ You can edit/expand **Charities** and **ValueGuide_Custom** at any time — the 
 
 ## Troubleshooting (common issues)
 
+- **I don’t see the Extensions menu in Google Sheets**  
+  Make sure you’ve converted the `.xlxs` file to a native **Google Sheets** file, see Step 1 part 5.
+
 - **I don’t see any organizations/items in the web app.**  
   Make sure you’re using the **Google Sheets** version (not the original Excel). Verify the tab names match exactly:  
   `Donations_Log`, `Charities`, `ValueGuide_Custom`.
