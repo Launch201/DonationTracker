@@ -29,7 +29,8 @@ function listCharities() {
   try {
     const sh = _ss().getSheetByName(SHEET_CHAR);
     if (!sh) return {ok:false,error:`Sheet "${SHEET_CHAR}" not found`, data:[]};
-    const vals = sh.getRange(2,1, Math.max(0, sh.getLastRow()-1), 2).getValues();
+    const lr = sh.getLastRow();
+    const vals = lr < 2 ? [] : sh.getRange(2,1, lr-1, 2).getValues();
     const data = vals.filter(r => r[0]).map(([name, addr]) => ({name, address: addr || ""}));
     return {ok:true, data};
   } catch (e) {
@@ -41,7 +42,8 @@ function listItems() {
   try {
     const sh = _ss().getSheetByName(SHEET_GUIDE);
     if (!sh) return {ok:false,error:`Sheet "${SHEET_GUIDE}" not found`, data:[]};
-    const vals = sh.getRange(2,1, Math.max(0, sh.getLastRow()-1), 4).getValues();
+    const lr = sh.getLastRow();
+    const vals = lr < 2 ? [] : sh.getRange(2,1, lr-1, 4).getValues();
     const data = vals
       .filter(r => r[1])
       .map(([cat, item, low, high]) => ({
@@ -98,7 +100,8 @@ function ensureCharity(name, address) {
   if (!name) return {name:"", address:""};
   const sh = _ss().getSheetByName(SHEET_CHAR);
   if (!sh) throw new Error(`Sheet "${SHEET_CHAR}" missing.`);
-  const vals = sh.getRange(2,1, Math.max(0, sh.getLastRow()-1), 2).getValues();
+  const lr = sh.getLastRow();
+  const vals = lr < 2 ? [] : sh.getRange(2,1, lr-1, 2).getValues();
   for (const [n, a] of vals) {
     if (normalize_(n) === normalize_(name)) return {name:n, address:a || ""};
   }
