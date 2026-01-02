@@ -4,31 +4,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Donations</title>
 <style>
-  :root{--pad:14px;--gap:10px;--radius:12px;}
+  :root{--pad:16px;--gap:14px;--radius:12px;}
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;margin:0;background:#f6f7fb;color:#111;}
   .wrap{max-width:900px;margin:0 auto;padding:var(--pad);}
-  .tabs{display:flex;gap:8px;margin:6px 0 14px;}
+  .tabs{display:flex;gap:8px;margin:6px 0 16px;}
   .tab{flex:1;text-align:center;padding:12px;border-radius:999px;background:#e9ecf4;font-weight:600;cursor:pointer;}
   .tab.active{background:#111;color:#fff;}
   .card{background:#fff;border-radius:var(--radius);padding:var(--pad);box-shadow:0 2px 10px rgba(0,0,0,0.06);}
-  .grid{display:grid;grid-template-columns:1fr;gap:var(--gap);}
+  .grid{display:grid;grid-template-columns:1fr;gap:var(--gap);row-gap:var(--gap);}
   @media (min-width:800px){.grid{grid-template-columns:1fr 1fr;}}
   label{font-size:12px;font-weight:600;color:#555;margin-bottom:4px;display:block;}
-  input,select,button,textarea{width:100%;padding:12px 11px;border-radius:10px;border:1px solid #dcdfe6;background:#fff;}
+  input,select,button,textarea{width:100%;box-sizing:border-box;padding:12px 11px;border-radius:10px;border:1px solid #dcdfe6;background:#fff;}
   input[type="date"]{padding:10px;}
   .muted{font-size:12px;color:#667;}
   .pill{display:inline-block;background:#fffae7;border:1px solid #f1e2a3;color:#775d00;border-radius:999px;padding:4px 10px;font-size:12px;margin-left:8px;}
-  .list{margin-top:12px;border-top:1px dashed #e2e6f0;padding-top:10px;}
-  .item{display:grid;grid-template-columns: 1.8fr .9fr .7fr 1fr 1.3fr;gap:8px;margin-bottom:12px}
-  .meta{grid-column:1/-1;font-size:12px;color:#445;margin-top:-4px}
+  .list{margin-top:16px;border-top:1px dashed #e2e6f0;padding-top:14px;}
+  .item{display:grid;grid-template-columns: 2fr 1fr .5fr 1fr 1fr;gap:8px;margin-bottom:14px;align-items:center;}
+  .meta{grid-column:1/-1;font-size:12px;color:#445;margin-top:2px}
   @media (max-width:560px){
-    .item{grid-template-columns:1fr 1fr}
+    .item{grid-template-columns:1fr 1fr; gap: 12px;}
     .meta{grid-column:1/-1}
   }
-  .actions{display:flex;gap:10px;margin-top:10px}
+  .actions{display:flex;gap:10px;margin-top:14px}
   .btn-primary{background:#111;color:#fff;border:0;font-weight:700}
   .btn-ghost{background:#eef1f7;border-color:#e1e5ee}
-  .sum{margin-top:8px;text-align:right;font-weight:700}
+  .sum{margin-top:12px;text-align:right;font-weight:700}
   .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#111;color:#fff;padding:10px 14px;border-radius:999px;opacity:0;transition:.2s}
   .toast.show{opacity:1}
   button:disabled{opacity:.55;filter:grayscale(20%);cursor:not-allowed}
@@ -158,45 +158,42 @@ function addRow(prefill={}){
     <div class="meta">Low — High: <span class="rng">—</span> • Suggested FMV: <span class="sugg">—</span> • Line Total: <span class="line">—</span></div>
   `;
 
-  const elName=row.querySelector('.name'), elCond=row.querySelector('.cond'), elQty=row.querySelector('.qty'),
-        elOver=row.querySelector('.over'), elRng=row.querySelector('.rng'),
-        elSugg=row.querySelector('.sugg'), elLine=row.querySelector('.line');
-
-  let pending=0;
-  function refresh(){
-    const name = elName.value.trim();
-    const qty  = Number(elQty.value||1)||1;
-    const cond = elCond.value;
-    if (!name){ elRng.textContent="—"; elSugg.textContent="—"; elLine.textContent="—"; recalcSum(); return; }
-
-    const ticket=++pending;
-    google.script.run
-      .withFailureHandler(err => { console.log("lookupItem error:", err); })
-      .withSuccessHandler(res=>{
-        if (ticket!==pending) return;
-        if (res.ok === false){ console.log("lookupItem failed:", res.error||""); elRng.textContent="—"; elSugg.textContent="—"; elLine.textContent="—"; return; }
-        const low = res.low, high = res.high;
-        let fmv=null;
-        if (low>0 && high>0){
-          fmv = computeFMV(low, high, cond);
-          elRng.textContent = `$${currency(low)} — $${currency(high)}`;
-          elSugg.textContent = fmv ? `$${currency(fmv)}` : "—";
-        } else { elRng.textContent = "—"; elSugg.textContent = "—"; }
-        const use = (elOver.value && Number(elOver.value)>0) ? Number(elOver.value) : (fmv||0);
-        elLine.textContent = use>0 ? `$${currency(use*qty)}` : "—";
-        recalcSum();
-      })
-      .lookupItem(name);
-  }
-  ['change','input','blur'].forEach(evt=>{
-    elName.addEventListener(evt, refresh);
-    elCond.addEventListener(evt, refresh);
-    elQty.addEventListener(evt, refresh);
-    elOver.addEventListener(evt, refresh);
-  });
-
+  const elName=row.querySelector('.name');
   if (prefill.item) elName.value = prefill.item;
+  
+  row.addEventListener('input', () => refreshRow(row));
+  row.addEventListener('change', () => refreshRow(row));
+  
   document.getElementById('itemsList').appendChild(row);
+  if (prefill.item) refreshRow(row);
+}
+
+function refreshRow(row){
+    const elName=row.querySelector('.name'), elCond=row.querySelector('.cond'), elQty=row.querySelector('.qty'),
+          elOver=row.querySelector('.over'), elRng=row.querySelector('.rng'),
+          elSugg=row.querySelector('.sugg'), elLine=row.querySelector('.line');
+
+  const name = elName.value.trim();
+  const qty  = Number(elQty.value||1)||1;
+  const cond = elCond.value;
+  if (!name){ elRng.textContent="—"; elSugg.textContent="—"; elLine.textContent="—"; recalcSum(); return; }
+
+  google.script.run
+    .withFailureHandler(err => { console.log("lookupItem error:", err); })
+    .withSuccessHandler(res=>{
+      if (res.ok === false){ console.log("lookupItem failed:", res.error||""); elRng.textContent="—"; elSugg.textContent="—"; elLine.textContent="—"; return; }
+      const low = res.low, high = res.high;
+      let fmv=null;
+      if (low>0 && high>0){
+        fmv = computeFMV(low, high, cond);
+        elRng.textContent = `$${currency(low)} — $${currency(high)}`;
+        elSugg.textContent = fmv ? `$${currency(fmv)}` : "—";
+      } else { elRng.textContent = "—"; elSugg.textContent = "—"; }
+      const use = (elOver.value && Number(elOver.value)>0) ? Number(elOver.value) : (fmv||0);
+      elLine.textContent = use>0 ? `$${currency(use*qty)}` : "—";
+      recalcSum();
+    })
+    .lookupItem(name);
 }
 
 /* ---------- Totals ---------- */
