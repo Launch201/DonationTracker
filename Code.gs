@@ -56,18 +56,6 @@ function listItems() {
   }
 }
 
-// Compute FMV (midpoint × factor, clamped)
-function computeFMV(low, high, condition) {
-  if (!(low>0) || !(high>0)) return null;
-  const mid = (low + high)/2;
-  const f =
-    condition === "Poor"      ? 0.8 :
-    condition === "Fair"      ? 0.9 :
-    condition === "Excellent" ? 1.1 : 1.0; // default Good/blank = 1.0
-  const raw = mid * f;
-  return Math.max(low, Math.min(high, raw));
-}
-
 // Ensure charity exists (adds if new). Returns {name, address}
 function ensureCharity(name, address) {
   if (!name) return {name:"", address:""};
@@ -104,7 +92,7 @@ function submitCash(payload) {
     chosen.name,    
     fmtDate(payload.dateISO),
     "Money",
-    "Cash Donation",
+    payload.method,
     "",                      // Description blank to match log schema
     Number(payload.amount||0), 
     payload.note || ""

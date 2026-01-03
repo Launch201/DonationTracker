@@ -215,15 +215,22 @@ function opt(el, text, value, selected){
   if (selected) o.selected=true;
   el.appendChild(o); 
 }
+function lock(btn, on=true){ btn.disabled = on; if (on) btn.dataset.busy="1"; else delete btn.dataset.busy; }
 function currency(n){ return (n||0).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
 function computeFMV(low, high, condition){
   if (!(low>0) || !(high>0)) return null;
-  const mid=(low+high)/2;
-  const f = condition==="Poor"?0.8:condition==="Fair"?0.9:condition==="Excellent"?1.1:1.0;
-  const raw=mid*f;
-  return Math.max(low, Math.min(high, raw));
+
+  const diff = high-low;
+  switch (condition) {
+    case "Poor":
+      return low;
+    case "Fair":
+      return low + diff*0.333;
+    case "Good":
+      return low + diff*0.666;
+  }
+  return high;
 }
-function lock(btn, on=true){ btn.disabled = on; if (on) btn.dataset.busy="1"; else delete btn.dataset.busy; }
 
 function localLookup(name) {
   const q = name.toLowerCase().trim();
@@ -505,6 +512,7 @@ async function submitCash(){
   const newOrg  = document.getElementById('cashNewOrg').value.trim();
   const dateISO = document.getElementById('cashDate').value;
   const amount  = Number(document.getElementById('cashAmount').value || 0);
+  const method  = document.getElementById('cashMethod').value;
   const note    = document.getElementById('cashNote').value.trim();
 
   if (!org && !newOrg) { toast("Pick an organization or enter a new one."); return; }
@@ -518,7 +526,7 @@ async function submitCash(){
     newAddr: document.getElementById('cashNewAddr').value,
     dateISO,
     amount,
-    method: document.getElementById('cashMethod').value,
+    method,
     note
   };
 
