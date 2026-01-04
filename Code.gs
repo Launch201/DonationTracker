@@ -19,7 +19,8 @@ function _ss() {
 function doGet() {
   return HtmlService.createHtmlOutputFromFile("index")
     .setTitle("Donations")
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
 /* ---------- Helpers ---------- */
@@ -39,7 +40,7 @@ function listCharities() {
 }
 
 function listItems() {
-  try {
+    try {
     const sh = _ss().getSheetByName(SHEET_GUIDE);
     if (!sh) return {ok:false,error:`Sheet "${SHEET_GUIDE}" not found`, data:[]};
     const lr = sh.getLastRow();
@@ -49,50 +50,10 @@ function listItems() {
       .map(([cat, item, low, high]) => ({
         item, low: Number(low || 0), high: Number(high || 0), category: cat
       }));
-    return {ok:true, data};
+    return { ok: true, rawData: data };
   } catch (e) {
     return {ok:false, error: String(e), data:[]};
   }
-}
-
-// Smart lookup: exact → startsWith → contains; also match after "Category: "
-function lookupItem(name) {
-  try {
-    const q = normalize_(name);
-    if (!q) return {ok:true, low:null, high:null};
-
-    const sh = _ss().getSheetByName(SHEET_GUIDE);
-    if (!sh) return {ok:false, error:`Sheet "${SHEET_GUIDE}" not found`, low:null, high:null};
-
-    const vals = sh.getRange(2,1, Math.max(0, sh.getLastRow()-1), 4).getValues();
-    let exact=null, starts=null, contains=null;
-
-    for (const [cat, item, low, high] of vals) {
-      const full = normalize_(item);
-      const bare = normalize_(item.replace(/^[^:]+:\s*/, ""));
-      const lo = Number(low||0), hi = Number(high||0);
-
-      if (full === q || bare === q) { exact = {low:lo, high:hi}; break; }
-      if (!starts && (full.startsWith(q) || bare.startsWith(q))) starts = {low:lo, high:hi};
-      if (!contains && (full.includes(q) || bare.includes(q))) contains = {low:lo, high:hi};
-    }
-    const pick = exact || starts || contains || {low:null, high:null};
-    return {ok:true, ...pick};
-  } catch (e) {
-    return {ok:false, error: String(e), low:null, high:null};
-  }
-}
-
-// Compute FMV (midpoint × factor, clamped)
-function computeFMV(low, high, condition) {
-  if (!(low>0) || !(high>0)) return null;
-  const mid = (low + high)/2;
-  const f =
-    condition === "Poor"      ? 0.8 :
-    condition === "Fair"      ? 0.9 :
-    condition === "Excellent" ? 1.1 : 1.0; // default Good/blank = 1.0
-  const raw = mid * f;
-  return Math.max(low, Math.min(high, raw));
 }
 
 // Ensure charity exists (adds if new). Returns {name, address}
@@ -128,13 +89,13 @@ function submitCash(payload) {
     : ensureCharity(payload.org, "");
 
   const row = [
-    chosen.name,
-    chosen.address,
+    chosen.name,    
     fmtDate(payload.dateISO),
     "Money",
-    "Cash Donation",
+    payload.method,
     "",                      // Description blank to match log schema
-    Number(payload.amount||0)
+    Number(payload.amount||0), 
+    payload.note || ""
   ];
   sh.appendRow(row);
   return {ok:true};
@@ -142,39 +103,35 @@ function submitCash(payload) {
 
 // payload: {org, newOrg, newAddr, dateISO, lines:[{item, condition, qty, override, note}]}
 function submitItems(payload) {
-  const sh = _ss().getSheetByName(SHEET_LOG);
-  if (!sh) throw new Error(`Sheet "${SHEET_LOG}" missing.`);
-
-  const chosen = (payload.newOrg && payload.newOrg.trim())
+  try {
+    const ss = _ss();
+    const sheet = ss.getSheetByName(SHEET_LOG); // Replace with your actual donations sheet constant
+        
+    // Determine the Organization Name
+    const chosen = (payload.newOrg && payload.newOrg.trim())
     ? ensureCharity(payload.newOrg, payload.newAddr)
     : ensureCharity(payload.org, "");
 
-  const dateOut = fmtDate(payload.dateISO);
-  let count = 0;
+    const dateOut = fmtDate(payload.dateISO);
+    
+    // Prepare the rows to be appended
+    const rows = payload.lines.map(line => [
+      chosen.name,
+      dateOut,
+      line.item,
+      line.condition,
+      line.qty,
+      line.qty * (line.override || line.fmvAtTime), // Use override if exists, otherwise the FMV found
+      line.note || ""
+    ]);
 
-  (payload.lines || []).forEach(line => {
-    if (!line.item) return;
+    // Append rows to the sheet
+    if (rows.length > 0) {
+      sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
+    }
 
-    const res = lookupItem(line.item);
-    if (res.ok === false) throw new Error(res.error || "Lookup failed.");
-    const {low, high} = res;
-
-    const fmv = (line.override && Number(line.override) > 0)
-      ? Number(line.override)
-      : computeFMV(low, high, line.condition || "");
-
-    const qty   = Number(line.qty || 1) || 1;
-    const total = fmv ? fmv * qty : 0;
-    if (!(total > 0)) return;
-
-    const desc = line.item +
-      (line.condition ? ` (${line.condition})` : "") +
-      (qty !== 1 ? ` x${qty}` : "") +
-      (line.note ? ` – ${line.note}` : "");
-
-    sh.appendRow([chosen.name, chosen.address, dateOut, "Item", "Non-Cash Donation", desc, total]);
-    count++;
-  });
-
-  return {ok:true, lines:count};
+    return { ok: true, lines: rows.length };
+  } catch (e) {
+    throw new Error("Failed to submit items: " + e.toString());
+  }
 }

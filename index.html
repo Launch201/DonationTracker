@@ -5,33 +5,89 @@
 <title>Donations</title>
 <style>
   :root{--pad:14px;--gap:10px;--radius:12px;}
+  
+  /* GLOBAL RESET: Ensures padding doesn't break layout width */
+  *, *:before, *:after { box-sizing: border-box; }
+
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;margin:0;background:#f6f7fb;color:#111;}
-  .wrap{max-width:900px;margin:0 auto;padding:var(--pad);}
+  .wrap{max-width:900px;width:100%;margin:0 auto;padding:var(--pad);}
+  
   .tabs{display:flex;gap:8px;margin:6px 0 14px;}
-  .tab{flex:1;text-align:center;padding:12px;border-radius:999px;background:#e9ecf4;font-weight:600;cursor:pointer;}
+  .tab{flex:1;text-align:center;padding:12px;border-radius:999px;background:#e9ecf4;font-weight:600;cursor:pointer; user-select: none;}
   .tab.active{background:#111;color:#fff;}
+  
   .card{background:#fff;border-radius:var(--radius);padding:var(--pad);box-shadow:0 2px 10px rgba(0,0,0,0.06);}
+  
+  /* MAIN GRID: Defaults to 1 column (mobile), becomes 2 columns on desktop */
   .grid{display:grid;grid-template-columns:1fr;gap:var(--gap);}
   @media (min-width:800px){.grid{grid-template-columns:1fr 1fr;}}
+  
   label{font-size:12px;font-weight:600;color:#555;margin-bottom:4px;display:block;}
-  input,select,button,textarea{width:100%;padding:12px 11px;border-radius:10px;border:1px solid #dcdfe6;background:#fff;}
+  
+  /* INPUTS: Font-size 16px prevents iOS zoom on focus */
+  input,select,button,textarea{width:100%;padding:12px 11px;border-radius:10px;border:1px solid #dcdfe6;background:#fff;font-size:16px;}
   input[type="date"]{padding:10px;}
+  
   .muted{font-size:12px;color:#667;}
   .pill{display:inline-block;background:#fffae7;border:1px solid #f1e2a3;color:#775d00;border-radius:999px;padding:4px 10px;font-size:12px;margin-left:8px;}
+  
   .list{margin-top:12px;border-top:1px dashed #e2e6f0;padding-top:10px;}
-  .item{display:grid;grid-template-columns: 1.8fr .9fr .7fr 1fr 1.3fr;gap:8px;margin-bottom:12px}
-  .meta{grid-column:1/-1;font-size:12px;color:#445;margin-top:-4px}
-  @media (max-width:560px){
-    .item{grid-template-columns:1fr 1fr}
-    .meta{grid-column:1/-1}
+  
+  /* ITEM ROW: Default Desktop Layout (5 columns) */
+  .meta{grid-column:1/-1;font-size:12px;color:#445;margin-top:-4px;}
+
+  .item {
+    display: grid;
+    grid-template-columns: 1.8fr .9fr .7fr 1fr 1.3fr;
+    gap: 8px;
+    margin-bottom: 12px;
+    position: relative; /* ADD THIS: Necessary for the custom dropdown positioning */
   }
-  .actions{display:flex;gap:10px;margin-top:10px}
-  .btn-primary{background:#111;color:#fff;border:0;font-weight:700}
-  .btn-ghost{background:#eef1f7;border-color:#e1e5ee}
-  .sum{margin-top:8px;text-align:right;font-weight:700}
-  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#111;color:#fff;padding:10px 14px;border-radius:999px;opacity:0;transition:.2s}
-  .toast.show{opacity:1}
-  button:disabled{opacity:.55;filter:grayscale(20%);cursor:not-allowed}
+
+  /* Add these new classes below your existing CSS */
+  .ac-results {
+    position: absolute;
+    top: 40px; /* Adjust based on your input height to appear below the box */
+    left: 0;
+    background: #fff;
+    border: 1px solid #dcdfe6;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    width: 100%; /* Ensures it matches the width of the item name input */
+  }
+
+  .ac-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+  }
+
+  .ac-item:last-child { border-bottom: none; }
+  .ac-item:hover { background: #f6f7fb; }
+
+  /* MOBILE BREAKPOINT for Item Row */
+  @media (max-width:600px){
+    /* Switch item row to a vertical stack for better usability */
+    .item{display:flex; flex-direction: column; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0;}
+    .meta{margin-top:0;}
+  }
+
+  .actions{display:flex;gap:10px;margin-top:10px; flex-wrap: wrap; align-items: center;}
+  
+  .btn-primary{background:#111;color:#fff;border:0;font-weight:700; cursor: pointer;}
+  .btn-ghost{background:#eef1f7;border-color:#e1e5ee; cursor: pointer;}
+  
+  .sum{margin-top:8px;text-align:right;font-weight:700;}
+  
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#111;color:#fff;padding:10px 14px;border-radius:999px;opacity:0;transition:.2s; max-width: 90vw; text-align: center; pointer-events: none;}
+  .toast.show{opacity:1;}
+  
+  button:disabled{opacity:.55;filter:grayscale(20%);cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -41,7 +97,6 @@
     <div id="tab-items" class="tab" onclick="showTab('items')">Items</div>
   </div>
 
-  <!-- CASH -->
   <div id="view-cash" class="card">
     <div class="grid">
       <div>
@@ -73,13 +128,16 @@
         <input id="cashNewAddr" placeholder="Address">
       </div>
     </div>
+    <div style="grid-column: 1 / -1;margin-top:10px;">
+    <label>Note (optional)</label>
+    <input id="cashNote" placeholder="Note">
+  </div>
     <div class="actions">
       <button id="btnCash" class="btn-primary" onclick="submitCash()">Submit Cash</button>
       <span class="muted">Use New Charity fields if first time.</span>
     </div>
   </div>
 
-  <!-- ITEMS -->
   <div id="view-items" class="card" style="display:none">
     <div class="grid">
       <div>
@@ -112,13 +170,32 @@
   </div>
 </div>
 
-<!-- One global datalist for all rows -->
 <datalist id="items-dl"></datalist>
 
 <div id="toast" class="toast"></div>
 
 <script>
+let guideData = []; // Global variable to store the donation guide
 let charities=[], items=[];
+const MAX_HISTORY = 5;
+
+/* ---------- Recent Item History ---------- */
+function updateHistory(itemName) {
+  if (!itemName) return;
+  let history = JSON.parse(localStorage.getItem('donationHistory') || '[]');
+  
+  // Remove duplicate if it exists, then add to front
+  history = history.filter(n => n !== itemName);
+  history.unshift(itemName);
+  
+  // Keep only the last MAX_HISTORY items
+  if (history.length > MAX_HISTORY) history.pop();
+  localStorage.setItem('donationHistory', JSON.stringify(history));
+}
+
+function getHistory() {
+  return JSON.parse(localStorage.getItem('donationHistory') || '[]');
+}
 
 /* ---------- UI helpers ---------- */
 function showTab(which){
@@ -131,65 +208,202 @@ function toast(msg){
   const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),1800);
 }
-function opt(el, text, value){
-  const o=document.createElement('option'); o.textContent=text; o.value=value??text; el.appendChild(o);
+function opt(el, text, value, selected){
+  const o=document.createElement('option'); 
+  o.textContent=text; 
+  o.value=value??text; 
+  if (selected) o.selected=true;
+  el.appendChild(o); 
 }
+function lock(btn, on=true){ btn.disabled = on; if (on) btn.dataset.busy="1"; else delete btn.dataset.busy; }
 function currency(n){ return (n||0).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
 function computeFMV(low, high, condition){
   if (!(low>0) || !(high>0)) return null;
-  const mid=(low+high)/2;
-  const f = condition==="Poor"?0.8:condition==="Fair"?0.9:condition==="Excellent"?1.1:1.0;
-  const raw=mid*f;
-  return Math.max(low, Math.min(high, raw));
+
+  const diff = high-low;
+  switch (condition) {
+    case "Poor":
+      return low;
+    case "Fair":
+      return low + diff*0.333;
+    case "Good":
+      return low + diff*0.666;
+  }
+  return high;
 }
-function lock(btn, on=true){ btn.disabled = on; if (on) btn.dataset.busy="1"; else delete btn.dataset.busy; }
+
+function localLookup(name) {
+  const q = name.toLowerCase().trim();
+  if (!q || !guideData || guideData.length === 0) return { low: null, high: null };
+
+  let exact = null, starts = null, contains = null;
+
+  for (const row of guideData) {
+    // Use the object keys we found in your console
+    if (!row.item) continue;
+    
+    const full = row.item.toLowerCase().trim();
+    // Handles your "Category: Item" format automatically
+    const bare = row.item.replace(/^[^:]+:\s*/, "").toLowerCase().trim();
+
+    if (full === q || bare === q) {
+      exact = { low: row.low, high: row.high };
+      break; 
+    }
+    if (!starts && (full.startsWith(q) || bare.startsWith(q))) {
+      starts = { low: row.low, high: row.high };
+    }
+    if (!contains && (full.includes(q) || bare.includes(q))) {
+      contains = { low: row.low, high: row.high };
+    }
+  }
+
+  return exact || starts || contains || { low: null, high: null };
+}
+
+/* ---------- Performance Helpers ---------- */
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+const runServer = (funcName, ...args) => {
+  return new Promise((resolve, reject) => {
+    google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(reject)[funcName](...args);
+  });
+};
 
 /* ---------- Items list row ---------- */
 function addRow(prefill={}){
-  const row=document.createElement('div'); row.className='item';
+  const row=document.createElement('div'); 
+  row.className='item';
+  // Use a wrapper div around the name input to anchor the absolute dropdown
   row.innerHTML = `
-    <input class="name" placeholder="Item (start typing)" list="items-dl">
+    <div style="position:relative;">
+      <input class="name" placeholder="Item (start typing)" autocomplete="off">
+      <div class="ac-results"></div>
+    </div>
     <select class="cond">
       <option>Poor</option><option>Fair</option><option selected>Good</option><option>Excellent</option>
     </select>
-    <input class="qty" type="number" min="1" value="1">
+    <input class="qty" type="number" min="1" value="1" placeholder="Qty">
     <input class="over" placeholder="Override FMV" type="number" min="0" step="0.01">
     <input class="note" placeholder="Notes (optional)">
     <div class="meta">Low — High: <span class="rng">—</span> • Suggested FMV: <span class="sugg">—</span> • Line Total: <span class="line">—</span></div>
   `;
 
-  const elName=row.querySelector('.name'), elCond=row.querySelector('.cond'), elQty=row.querySelector('.qty'),
-        elOver=row.querySelector('.over'), elRng=row.querySelector('.rng'),
-        elSugg=row.querySelector('.sugg'), elLine=row.querySelector('.line');
+  const elName=row.querySelector('.name'), 
+        elResults=row.querySelector('.ac-results'),
+        elCond=row.querySelector('.cond'), 
+        elQty=row.querySelector('.qty'),
+        elOver=row.querySelector('.over'), 
+        elRng=row.querySelector('.rng'),
+        elSugg=row.querySelector('.sugg'), 
+        elLine=row.querySelector('.line');
 
-  let pending=0;
+  // --- CUSTOM DROPDOWN LOGIC ---
+  const showDropdown = () => {
+    const val = elName.value.toLowerCase().trim();
+    elResults.innerHTML = '';
+    
+    let matches = [];
+    const recent = getHistory(); // Get your last 5 items
+
+    if (val.length < 1) {
+      // EMPTY INPUT: Show History + Top Guide Items
+      // 1. Add "Recent" Label if history exists
+      if (recent.length > 0) {
+        matches.push({ type: 'header', text: 'Recent Items' });
+        recent.forEach(name => matches.push({ item: name, isRecent: true }));
+        matches.push({ type: 'header', text: 'All Items' });
+      }
+      // 2. Add some default items (optional, or just wait for typing)
+      guideData.slice(0, 20).forEach(m => matches.push(m)); 
+    } else {
+      // TYPING: Filter guideData
+      // You can also prioritize history matches here if you want
+      matches = guideData.filter(d => d.item.toLowerCase().includes(val)).slice(0, 20);
+    }
+
+    if (matches.length > 0) {
+      matches.forEach(m => {
+        const div = document.createElement('div');
+        
+        if (m.type === 'header') {
+          // Section Header Style
+          div.className = 'ac-header';
+          div.textContent = m.text;
+          div.style.cssText = "padding:4px 12px; font-size:11px; font-weight:700; color:#888; background:#f9f9f9; pointer-events:none;";
+        } else {
+          // Standard Item
+          div.className = 'ac-item';
+          div.textContent = m.item;
+          // Add a star icon for recent items
+          if (m.isRecent) div.innerHTML = `<span style="color:#f5a623">★</span> ${m.item}`;
+          
+          div.onclick = () => {
+            elName.value = m.item;
+            elResults.style.display = 'none';
+            updateHistory(m.item); // <--- SAVE TO HISTORY ON CLICK
+            refresh();
+          };
+        }
+        elResults.appendChild(div);
+      });
+      elResults.style.display = 'block';
+    } else {
+      elResults.style.display = 'none';
+    }
+  };
+
+  // Trigger on typing OR clicking (focus)
+  elName.addEventListener('input', showDropdown);
+  elName.addEventListener('focus', showDropdown);
+
+  // Close dropdown if user clicks anywhere else on the screen
+  document.addEventListener('click', (e) => {
+    if (e.target !== elName) elResults.style.display = 'none';
+  });
+
+  // --- CALCULATION LOGIC ---
   function refresh(){
     const name = elName.value.trim();
     const qty  = Number(elQty.value||1)||1;
     const cond = elCond.value;
-    if (!name){ elRng.textContent="—"; elSugg.textContent="—"; elLine.textContent="—"; recalcSum(); return; }
 
-    const ticket=++pending;
-    google.script.run
-      .withFailureHandler(err => { console.log("lookupItem error:", err); })
-      .withSuccessHandler(res=>{
-        if (ticket!==pending) return;
-        if (res.ok === false){ console.log("lookupItem failed:", res.error||""); elRng.textContent="—"; elSugg.textContent="—"; elLine.textContent="—"; return; }
-        const low = res.low, high = res.high;
-        let fmv=null;
-        if (low>0 && high>0){
-          fmv = computeFMV(low, high, cond);
-          elRng.textContent = `$${currency(low)} — $${currency(high)}`;
-          elSugg.textContent = fmv ? `$${currency(fmv)}` : "—";
-        } else { elRng.textContent = "—"; elSugg.textContent = "—"; }
-        const use = (elOver.value && Number(elOver.value)>0) ? Number(elOver.value) : (fmv||0);
-        elLine.textContent = use>0 ? `$${currency(use*qty)}` : "—";
-        recalcSum();
-      })
-      .lookupItem(name);
+    if (!name){ 
+      elRng.textContent="—"; elSugg.textContent="—"; elLine.textContent="—"; 
+      recalcSum(); return; 
+    }
+
+    const res = localLookup(name); // Uses your existing logic
+    const low = res.low, high = res.high;
+    let fmv=null;
+    
+    if (low > 0 && high > 0){
+      fmv = computeFMV(low, high, cond);
+      elRng.textContent = `$${currency(low)} — $${currency(high)}`;
+      elSugg.textContent = fmv ? `$${currency(fmv)}` : "—";
+    } else { 
+      elRng.textContent = "—"; elSugg.textContent = "—"; 
+    }
+
+    const use = (elOver.value && Number(elOver.value)>0) ? Number(elOver.value) : (fmv||0);
+    elLine.textContent = use > 0 ? `$${currency(use*qty)}` : "—";
+    recalcSum();
   }
-  ['change','input','blur'].forEach(evt=>{
-    elName.addEventListener(evt, refresh);
+
+  // Use the debounce helper for typing to keep UI smooth
+  const debouncedRefresh = debounce(refresh, 400);
+  elName.addEventListener('input', debouncedRefresh);
+  
+  ['change', 'blur'].forEach(evt => elName.addEventListener(evt, refresh));
+  ['change', 'input', 'blur'].forEach(evt => {
     elCond.addEventListener(evt, refresh);
     elQty.addEventListener(evt, refresh);
     elOver.addEventListener(evt, refresh);
@@ -210,34 +424,15 @@ function recalcSum(){
 
 /* ---------- Load data ---------- */
 function loadData(){
-  // Charities
-  google.script.run
-    .withFailureHandler(err => {
-      console.log("listCharities error:", err);
-      toast("Can't load charities. Check sheet access & sign-in.");
-    })
-    .withSuccessHandler(res => {
-      const payload = res || {ok:false, data:[]};
-      if (payload.ok === false) {
-        console.log("listCharities failed:", payload.error||"");
-        toast("Charity list unavailable. Confirm SHEET_ID & sharing.");
-      }
-      charities = payload.data || [];
-      const sel1 = document.getElementById('cashOrg');
-      const sel2 = document.getElementById('itemsOrg');
-      sel1.innerHTML=""; sel2.innerHTML="";
-      if (!charities.length){
-        opt(sel1, "— No charities yet —", "");
-        opt(sel2, "— No charities yet —", "");
-      } else {
-        opt(sel1, "— Select —", ""); opt(sel2, "— Select —", "");
-        charities.forEach(c => { opt(sel1, c.name, c.name); opt(sel2, c.name, c.name); });
-      }
-      const today = new Date().toISOString().slice(0,10);
-      document.getElementById('cashDate').value = today;
-      document.getElementById('itemsDate').value = today;
-    })
-    .listCharities();
+  if (typeof google === 'undefined') {
+    // Fallback for non-Apps Script environments (e.g. standard browser open)
+    console.warn("Google Script API not found. Running in standalone mode.");
+    opt(document.getElementById('cashOrg'), "Demo Charity", "Demo Charity");
+    opt(document.getElementById('itemsOrg'), "Demo Charity", "Demo Charity");
+    return;
+  }  
+
+  loadCharities();
 
   // Items for global datalist
   google.script.run
@@ -246,21 +441,70 @@ function loadData(){
       toast("Can't load value guide. Check sheet access & sign-in.");
     })
     .withSuccessHandler(res => {
-      const payload = res || {ok:false, data:[]};
-      if (payload.ok === false) {
-        console.log("listItems failed:", payload.error||"");
-        toast("Value guide unavailable. Confirm SHEET_ID & sharing.");
+    if (res.ok) {
+      // 1. Store the full array for our new local search logic
+      // We check for both names to be safe during the transition
+      guideData = res.rawData || res.data || []; 
+
+      // 2. Populate the datalist (dropdown)
+      const dl = document.getElementById('items-dl');
+      if (dl) {
+        dl.innerHTML = "";
+        guideData.forEach(row => {
+          // In the rawData format, row[1] is the Item Name
+          const itemName = row.item;
+          if (itemName) {
+            const o = document.createElement('option');
+            o.value = itemName;
+            dl.appendChild(o);
+          }
+        });
+        if (document.getElementById('itemsList').children.length === 0) addRow();
       }
-      items = payload.data || [];
-      const dl = document.getElementById('items-dl'); dl.innerHTML = "";
-      items.forEach(it => { const o=document.createElement('option'); o.value = it.item; dl.appendChild(o); });
-      if (document.getElementById('itemsList').children.length===0) addRow();
-    })
-    .listItems();
+    } else {
+      console.error("Failed to load guide:", res.error);
+    }
+  })
+  .listItems();
+}
+
+async function loadCharities(selectedCharity) {
+  try {
+    const res = await runServer('listCharities');
+    const payload = res || {ok:false, data:[]};
+    
+    if (!payload.ok) throw new Error(payload.error || "Unknown error");
+
+    charities = payload.data || [];
+    const sel1 = document.getElementById('cashOrg');
+    const sel2 = document.getElementById('itemsOrg');
+    
+    sel1.innerHTML=""; sel2.innerHTML="";
+    if (!charities.length){
+      opt(sel1, "— No charities yet —", "");
+      opt(sel2, "— No charities yet —", "");
+    } else {
+      opt(sel1, "— Select —", ""); opt(sel2, "— Select —", "");
+      charities.forEach(c => { 
+        opt(sel1, c.name, c.name, selectedCharity === c.name); 
+        opt(sel2, c.name, c.name, selectedCharity === c.name); 
+      });
+    }
+    
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById('cashDate').value = today;
+    document.getElementById('itemsDate').value = today;
+    
+    return true; // Signals completion
+  } catch (err) {
+    console.error("listCharities error:", err);
+    toast("Can't load charities. Check sheet access & sign-in.");
+    return false;
+  }
 }
 
 /* ---------- Submit handlers ---------- */
-function submitCash(){
+async function submitCash(){
   const btn = document.getElementById('btnCash');
   if (btn.dataset.busy === "1") return;
 
@@ -268,6 +512,8 @@ function submitCash(){
   const newOrg  = document.getElementById('cashNewOrg').value.trim();
   const dateISO = document.getElementById('cashDate').value;
   const amount  = Number(document.getElementById('cashAmount').value || 0);
+  const method  = document.getElementById('cashMethod').value;
+  const note    = document.getElementById('cashNote').value.trim();
 
   if (!org && !newOrg) { toast("Pick an organization or enter a new one."); return; }
   if (!dateISO)        { toast("Please choose a date."); return; }
@@ -280,23 +526,35 @@ function submitCash(){
     newAddr: document.getElementById('cashNewAddr').value,
     dateISO,
     amount,
-    method: document.getElementById('cashMethod').value
+    method,
+    note
   };
 
   lock(btn, true);
-  google.script.run
-    .withFailureHandler(err => { toast("Error: "+err); lock(btn,false); })
-    .withSuccessHandler(() => {
-      toast("Cash donation recorded");
-      document.getElementById('cashAmount').value="";
-      document.getElementById('cashNewOrg').value="";
-      document.getElementById('cashNewAddr').value="";
-      lock(btn,false);
-    })
-    .submitCash(payload);
+  try {
+    // 1. Wait for the server to record the donation
+    await runServer('submitCash', payload);
+    toast("Cash donation recorded");
+
+    // 2. Clear fields
+    document.getElementById('cashAmount').value = "";
+    document.getElementById('cashNewOrg').value = "";
+    document.getElementById('cashNewAddr').value = "";
+    document.getElementById('cashNote').value = "";
+
+    // 3. Wait for the charities to fully reload (especially if a new one was added)
+    // We 'await' this so the button stays locked until the dropdowns are updated
+    await loadCharities(newOrg || org);
+
+  } catch (err) {
+      toast("Error: " + err);
+  } finally {
+      // 4. This runs no matter what (success or error), ONLY after the above are done
+      lock(btn, false);
+  }
 }
 
-function submitItems(){
+async function submitItems(){
   const btn = document.getElementById('btnItems');
   if (btn.dataset.busy === "1") return;
 
@@ -307,46 +565,79 @@ function submitItems(){
   if (!org && !newOrg) { toast("Pick an organization or enter a new one."); return; }
   if (!dateISO)        { toast("Please choose a date."); return; }
 
-  const rows=[...document.getElementById('itemsList').children];
-  const lines = rows.map(r=>{
+  const rows = [...document.getElementById('itemsList').children];
+  
+  // 1. Map the rows to a data object
+  const lines = rows.map(r => {
     const name = r.querySelector('.name').value.trim();
     const cond = r.querySelector('.cond').value;
     const qty  = Number(r.querySelector('.qty').value || 1) || 1;
     const over = r.querySelector('.over').value;
     const note = r.querySelector('.note').value;
-    const totalTxt = r.querySelector('.line').textContent.replace(/[^0-9.]/g,''); // UI-computed
-    const totalNum = Number(totalTxt || 0);
-    return { item:name, condition:cond, qty, override:over, note, _total:totalNum };
+    
+    // Get the values already calculated by localLookup in the UI
+    const suggTxt = r.querySelector('.sugg').textContent.replace(/[^0-9.]/g,'');
+    const totalTxt = r.querySelector('.line').textContent.replace(/[^0-9.]/g,'');
+    
+    return { 
+      item: name, 
+      condition: cond, 
+      qty: qty, 
+      override: over, 
+      note: note,
+      fmvAtTime: Number(suggTxt || 0), // The price found in your guide locally
+      lineTotal: Number(totalTxt || 0) // The final qty * price
+    };
   });
 
-  const hasAny = lines.some(l => l.item && (l._total > 0 || Number(l.override) > 0));
+  // 2. Validate that there is actually data to save
+  const hasAny = lines.some(l => l.item && (l.lineTotal > 0 || Number(l.override) > 0));
   if (!hasAny) { toast("Add at least one item with a value."); return; }
+  
   if (!confirm("Submit item donation?")) return;
 
+  // 3. Construct the final payload
   const payload = {
     org,
     newOrg,
     newAddr: document.getElementById('itemsNewAddr').value,
     dateISO,
-    lines: lines.map(({item,condition,qty,override,note}) => ({item,condition,qty,override,note}))
+    lines: lines.filter(l => l.item && (l.lineTotal > 0 || l.override > 0))
   };
 
+  // Save all successfully submitted items to history
+  lines.forEach(l => {
+    if (l.item) updateHistory(l.item);
+  });
+
   lock(btn, true);
-  google.script.run
-    .withFailureHandler(err => { toast("Error: "+err); lock(btn,false); })
-    .withSuccessHandler(res=>{
-      toast(`Recorded ${res.lines||0} item(s)`);
-      document.getElementById('itemsList').innerHTML="";
-      addRow();
-      document.getElementById('itemsNewOrg').value="";
-      document.getElementById('itemsNewAddr').value="";
-      recalcSum();
-      lock(btn,false);
-    })
-    .submitItems(payload);
+  
+  try {
+    // 1. Wait for the server to record the donation
+    const res = await runServer('submitItems', payload);
+    toast(`Recorded ${res.lines || 0} item(s)`);
+
+    // 2. Clear fields
+    document.getElementById('itemsList').innerHTML = "";
+    addRow(); // Add a fresh empty row
+    document.getElementById('itemsNewOrg').value = "";
+    document.getElementById('itemsNewAddr').value = "";
+    recalcSum();
+
+    // 3. Wait for the charities to fully reload (especially if a new one was added)
+    // We 'await' this so the button stays locked until the dropdowns are updated
+    await loadCharities(newOrg || org);
+
+  } catch (err) {
+      toast("Error: " + err);
+  } finally {
+      // 4. This runs no matter what (success or error), ONLY after the above are done
+      lock(btn, false);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', loadData);
+
 </script>
 </body>
 </html>
