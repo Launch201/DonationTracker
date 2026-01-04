@@ -166,6 +166,7 @@
     <div class="actions">
       <button class="btn-ghost" onclick="addRow()">+ Add item</button>
       <button id="btnItems" class="btn-primary" onclick="submitItems()">Submit Items</button>
+      <button class="btn-ghost" onclick="generatePrintout()">Generate Printout</button>
     </div>
   </div>
 </div>
@@ -633,6 +634,17 @@ async function submitItems(){
   } finally {
       // 4. This runs no matter what (success or error), ONLY after the above are done
       lock(btn, false);
+  }
+}
+
+async function generatePrintout(){
+  if (!confirm("Generate the printout sheet now?")) return;
+
+  try {
+    await runServer('buildPrintout');
+    toast("Printout sheet generated");
+  } catch (err) {
+    toast("Error: " + err);
   }
 }
 
