@@ -173,6 +173,12 @@
 
 <datalist id="items-dl"></datalist>
 
+<div class="wrap">
+  <div class="actions" style="justify-content:flex-end;">
+    <button class="btn-ghost" onclick="generatePrintout()">Generate Printout</button>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
 
 <script>
@@ -638,6 +644,10 @@ async function submitItems(){
 }
 
 async function generatePrintout(){
+  if (typeof google === 'undefined') {
+    toast("Printout unavailable outside Apps Script.");
+    return;
+  }
   if (!confirm("Generate the printout sheet now?")) return;
 
   try {
