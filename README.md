@@ -81,7 +81,7 @@ const SHEET_ID = "YOUR_SHEET_ID_HERE";
    - You can **override** the FMV if you disagree.
 4. Add more items as needed, then click **Submit Items**.
 
-All submissions append rows into the **`Donations_Log`** sheet.
+All submissions append rows into the **`Donations_Log`** sheet (which is a tab in the **`Donations_Tracker_Template`** spreadsheet).
 
 > **Mobile tip:** On iOS Safari or Android Chrome, open the Web App URL and **Add to Home Screen** for an app-like experience.
 
