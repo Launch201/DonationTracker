@@ -70,16 +70,24 @@ function ensureCharity(name, address) {
   return {name, address: address || ""};
 }
 
-// Format "MMMM d, yyyy"
+// Format from "YYYY-MM-DD" to "MMMM d, yyyy"
 function fmtDate(dt) {
-  const d = typeof dt === "string" ? new Date(dt) : dt;
-  if (Object.prototype.toString.call(d) !== "[object Date]" || isNaN(d)) return "";
-  return Utilities.formatDate(d, Session.getScriptTimeZone(), "MMMM d, yyyy");
+  const parts = dt.split("-");
+  const year = Number(parts[0]);
+  const monthIndex = Number(parts[1]) - 1; // 0-based
+  const day = Number(parts[2]);
+
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  return months[monthIndex] + " " + day + ", " + year;
 }
 
 /* ---------- Submit endpoints ---------- */
 
-// payload: {org, newOrg, newAddr, dateISO, amount, method}
+// payload: {org, newOrg, newAddr, date, amount, method}
 function submitCash(payload) {
   const sh = _ss().getSheetByName(SHEET_LOG);
   if (!sh) throw new Error(`Sheet "${SHEET_LOG}" missing.`);
@@ -90,7 +98,7 @@ function submitCash(payload) {
 
   const row = [
     chosen.name,    
-    fmtDate(payload.dateISO),
+    fmtDate(payload.date),
     "Money",
     payload.method,
     "",                      // Description blank to match log schema
@@ -101,7 +109,7 @@ function submitCash(payload) {
   return {ok:true};
 }
 
-// payload: {org, newOrg, newAddr, dateISO, lines:[{item, condition, qty, override, note}]}
+// payload: {org, newOrg, newAddr, date, lines:[{item, condition, qty, override, note}]}
 function submitItems(payload) {
   try {
     const ss = _ss();
@@ -112,7 +120,7 @@ function submitItems(payload) {
     ? ensureCharity(payload.newOrg, payload.newAddr)
     : ensureCharity(payload.org, "");
 
-    const dateOut = fmtDate(payload.dateISO);
+    const dateOut = fmtDate(payload.date);
     
     // Prepare the rows to be appended
     const rows = payload.lines.map(line => [
