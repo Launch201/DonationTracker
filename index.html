@@ -497,9 +497,13 @@ async function loadCharities(selectedCharity) {
       });
     }
     
-    const today = new Date().toISOString().slice(0,10);
-    document.getElementById('cashDate').value = today;
-    document.getElementById('itemsDate').value = today;
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    const date = `${yyyy}-${mm}-${dd}`;
+    document.getElementById('cashDate').value = date;
+    document.getElementById('itemsDate').value = date;
     
     return true; // Signals completion
   } catch (err) {
@@ -516,13 +520,13 @@ async function submitCash(){
 
   const org     = document.getElementById('cashOrg').value.trim();
   const newOrg  = document.getElementById('cashNewOrg').value.trim();
-  const dateISO = document.getElementById('cashDate').value;
+  const date    = document.getElementById('cashDate').value;
   const amount  = Number(document.getElementById('cashAmount').value || 0);
   const method  = document.getElementById('cashMethod').value;
   const note    = document.getElementById('cashNote').value.trim();
 
   if (!org && !newOrg) { toast("Pick an organization or enter a new one."); return; }
-  if (!dateISO)        { toast("Please choose a date."); return; }
+  if (!date)           { toast("Please choose a date."); return; }
   if (!(amount > 0))   { toast("Amount must be > 0."); return; }
   if (!confirm(`Submit cash: $${amount.toFixed(2)}?`)) return;
 
@@ -530,7 +534,7 @@ async function submitCash(){
     org,
     newOrg,
     newAddr: document.getElementById('cashNewAddr').value,
-    dateISO,
+    date,
     amount,
     method,
     note
@@ -566,10 +570,10 @@ async function submitItems(){
 
   const org     = document.getElementById('itemsOrg').value.trim();
   const newOrg  = document.getElementById('itemsNewOrg').value.trim();
-  const dateISO = document.getElementById('itemsDate').value;
+  const date    = document.getElementById('itemsDate').value;
 
   if (!org && !newOrg) { toast("Pick an organization or enter a new one."); return; }
-  if (!dateISO)        { toast("Please choose a date."); return; }
+  if (!date)           { toast("Please choose a date."); return; }
 
   const rows = [...document.getElementById('itemsList').children];
   
@@ -607,7 +611,7 @@ async function submitItems(){
     org,
     newOrg,
     newAddr: document.getElementById('itemsNewAddr').value,
-    dateISO,
+    date,
     lines: lines.filter(l => l.item && (l.lineTotal > 0 || l.override > 0))
   };
 
